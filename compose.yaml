@@ -1,0 +1,56 @@
+name: fastapi-nuitka-docker-poc
+
+services:
+  # ----------------------------------------------------
+  # PostgreSQL Database Service
+  # ----------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: poc_postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required in .env}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required in .env}
+    ports:
+      - "${HOST_DB_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:?DB_USER is required in .env} -d ${DB_NAME:?DB_NAME is required in .env}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------
+  # FastAPI Nuitka Compiled Application Service
+  # ----------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: poc_fastapi_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${HOST_APP_PORT:-8000}:8000"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      DEBUG: "false"
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:?DB_NAME is required in .env}
+      DB_USER: ${DB_USER:?DB_USER is required in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required in .env}
+      ASYNC_DATABASE_URL: "postgresql+asyncpg://${DB_USER:?DB_USER is required in .env}:${DB_PASSWORD:?DB_PASSWORD is required in .env}@db:5432/${DB_NAME:?DB_NAME is required in .env}"
+      SYNC_DATABASE_URL: "postgresql://${DB_USER:?DB_USER is required in .env}:${DB_PASSWORD:?DB_PASSWORD is required in .env}@db:5432/${DB_NAME:?DB_NAME is required in .env}"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required in .env}
+      JWT_ISSUER: ${JWT_ISSUER:-auth-service}
+
+volumes:
+  postgres_data:
+    name: poc_postgres_data

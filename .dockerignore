@@ -1,0 +1,31 @@
+# Git & Version Control
+.git
+.gitignore
+
+# Local Virtual Environments & Caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local Nuitka Builds & Scratch Test Scripts
+build_nuitka/
+scratch/
+test_*.py
+scratch_test.py
+
+# Sensitive Environment Files (DO NOT INCLUDE IN IMAGE)
+.env
+.env.*
+!.env.example
+
+# IDE & Editor Configuration
+.vscode/
+.idea/
+*.swp
+
+# Miscellaneous
+README.md
+intern_training_guide.md
